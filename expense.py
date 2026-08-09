@@ -234,59 +234,95 @@ def display_expenses():
         widget.destroy()
 
     expenses_list = get_expenses()
+
     row_num = 0
 
-    for i, item in enumerate(expenses_list):
+    for item in expenses_list:
 
-        if item[3] != "ACTIVE":
-            continue
+        expense_id = item[0]
+        category = item[1]
+        date = item[2]
+        amount = item[3]
 
         bg = "white" if row_num % 2 == 0 else "#f8f8f8"
 
-        row = tk.Frame(expense_frame, bg=bg)
-        row.pack(fill=tk.X, pady=1)
+        row = tk.Frame(
+            expense_frame,
+            bg=bg
+        )
 
+        row.pack(
+            fill=tk.X,
+            pady=1
+        )
+
+        # Category
         tk.Label(
             row,
-            text=item[0],
+            text=category,
             font=("Arial", 10),
             width=20,
             anchor="w",
             bg=bg
-        ).pack(side=tk.LEFT, padx=5)
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
+        # Amount
         tk.Label(
             row,
-            text=f"₹{item[1]}",
+            text=f"₹{amount:.2f}",
             font=("Arial", 10),
             width=15,
             anchor="w",
             bg=bg
-        ).pack(side=tk.LEFT, padx=5)
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
+        # Date
         tk.Label(
             row,
-            text=item[2],
+            text=str(date),
             font=("Arial", 10),
             width=15,
             anchor="w",
             bg=bg
-        ).pack(side=tk.LEFT, padx=5)
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
-        btn_frame = tk.Frame(row, bg=bg)
-        btn_frame.pack(side=tk.LEFT, padx=5)
+        # Buttons
+        btn_frame = tk.Frame(
+            row,
+            bg=bg
+        )
+
+        btn_frame.pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
         ttk.Button(
             btn_frame,
             text="✏ Edit",
-            command=lambda x=i: edit_expense(x)
-        ).pack(side=tk.LEFT, padx=5)
+            command=lambda x=expense_id: edit_expense(x)
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
         ttk.Button(
             btn_frame,
             text="🗑 Delete",
-            command=lambda x=i: delete_gui(x)
-        ).pack(side=tk.LEFT, padx=5)
+            command=lambda x=expense_id: delete_gui(x)
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
         row_num += 1
 
@@ -294,27 +330,22 @@ def display_expenses():
 # ===== Update Summary =====
 def update_summary():
 
-    total = calculate_total()
+    total = get_total_expense()
+
     total_label.config(
-        text=f"Total Expense      : ₹{total}"
+        text=f"Total Expense      : ₹{total:.2f}"
     )
 
     count = get_transaction_count()
+
     transaction_label.config(
         text=f"Total Transactions : {count}"
-    )
-
-    today_strs = get_today_strings()
-    today_total = get_today_expense(today_strs)
-    today_label.config(
-        text=f"Today's Expense    : ₹{today_total}"
     )
 
 
 # ===== Refresh GUI =====
 def refresh_gui():
 
-    load_expense()
 
     display_expenses()
 
@@ -324,23 +355,41 @@ def refresh_gui():
 # ===== Add Expense =====
 def add_expense_gui():
 
-    category = category_entry.get()
-    amount = amount_entry.get()
-    date = date_entry.get()
+    category = category_entry.get().strip()
+    amount = amount_entry.get().strip()
+    date = date_entry.get().strip()
 
     if not category or not amount or not date:
-        status_var.set("Status : Please fill all fields")
+
+        status_var.set(
+            "Status : Please fill all fields"
+        )
+
         return
 
-    add_expense(category, amount, date)
+    try:
+        amount = float(amount)
+    except ValueError:
 
-    save_expense()
+        status_var.set(
+            "Status : Amount must be a number"
+        )
+
+        return
+
+    add_expense(
+        category,
+        date,
+        amount
+    )
 
     category_entry.delete(0, tk.END)
     amount_entry.delete(0, tk.END)
     date_entry.delete(0, tk.END)
 
-    status_var.set("Status : Expense added successfully")
+    status_var.set(
+        "Status : Expense added successfully"
+    )
 
     refresh_gui()
 
@@ -355,87 +404,157 @@ add_btn.grid(row=3, column=0, columnspan=2, pady=(15, 5))
 
 
 # ===== Delete Expense =====
-def delete_gui(index):
+def delete_gui(expense_id):
 
-    delete_expense(index)
+    delete_expense(expense_id)
 
-    save_expense()
-
-    status_var.set("Status : Expense deleted")
+    status_var.set(
+        "Status : Expense deleted successfully"
+    )
 
     refresh_gui()
 
 
 # ===== Edit Expense (Popup) =====
-def edit_expense(index):
+def edit_expense(expense_id):
 
-    item = get_expenses()[index]
+    expenses_list = get_expenses()
+
+    item = None
+
+    for expense in expenses_list:
+
+        if expense[0] == expense_id:
+            item = expense
+            break
+
+    if item is None:
+        return
 
     popup = tk.Toplevel(root)
-    popup.title("Edit Expense")
-    popup.geometry("380x280")
-    popup.resizable(False, False)
-    popup.grab_set()
 
-    # Center the popup on the main window
-    popup.update_idletasks()
-    x = root.winfo_x() + (root.winfo_width() // 2) - (380 // 2)
-    y = root.winfo_y() + (root.winfo_height() // 2) - (280 // 2)
-    popup.geometry(f"+{x}+{y}")
+    popup.title("Edit Expense")
+
+    popup.geometry("400x300")
+
+    popup.resizable(False, False)
+
+    popup.grab_set()
 
     tk.Label(
         popup,
         text="EDIT EXPENSE",
-        font=("Arial", 14, "bold")
-    ).pack(pady=(15, 10))
+        font=("Arial", 16, "bold")
+    ).pack(pady=15)
 
     form = tk.Frame(popup)
-    form.pack(padx=30, pady=5)
 
+    form.pack(pady=10)
+
+    # Category
     tk.Label(
         form,
-        text="Category :",
-        font=("Arial", 10)
-    ).grid(row=0, column=0, sticky="w", pady=8)
+        text="Category :"
+    ).grid(
+        row=0,
+        column=0,
+        padx=10,
+        pady=10
+    )
 
-    cat_entry = ttk.Entry(form, width=25)
-    cat_entry.grid(row=0, column=1, pady=8, padx=(10, 0))
-    cat_entry.insert(0, item[0])
+    cat_entry = ttk.Entry(
+        form,
+        width=25
+    )
 
+    cat_entry.grid(
+        row=0,
+        column=1
+    )
+
+    cat_entry.insert(
+        0,
+        item[1]
+    )
+
+    # Amount
     tk.Label(
         form,
-        text="Amount :",
-        font=("Arial", 10)
-    ).grid(row=1, column=0, sticky="w", pady=8)
+        text="Amount :"
+    ).grid(
+        row=1,
+        column=0,
+        padx=10,
+        pady=10
+    )
 
-    amt_entry = ttk.Entry(form, width=25)
-    amt_entry.grid(row=1, column=1, pady=8, padx=(10, 0))
-    amt_entry.insert(0, item[1])
+    amt_entry = ttk.Entry(
+        form,
+        width=25
+    )
 
+    amt_entry.grid(
+        row=1,
+        column=1
+    )
+
+    amt_entry.insert(
+        0,
+        str(item[3])
+    )
+
+    # Date
     tk.Label(
         form,
-        text="Date :",
-        font=("Arial", 10)
-    ).grid(row=2, column=0, sticky="w", pady=8)
+        text="Date :"
+    ).grid(
+        row=2,
+        column=0,
+        padx=10,
+        pady=10
+    )
 
+    date_entry_popup = ttk.Entry(
+        form,
+        width=25
+    )
 
-    dt_entry = ttk.Entry(form, width=25)
-    dt_entry.grid(row=2, column=1, pady=8, padx=(10, 0))
-    dt_entry.insert(0, item[2])
+    date_entry_popup.grid(
+        row=2,
+        column=1
+    )
+
+    date_entry_popup.insert(
+        0,
+        str(item[2])
+    )
 
     def save_changes():
 
-        category = cat_entry.get()
-        amount = amt_entry.get()
-        date = dt_entry.get()
+        category = cat_entry.get().strip()
+        amount = amt_entry.get().strip()
+        date = date_entry_popup.get().strip()
 
-        update_expense(index, category, amount, date)
+        if not category or not amount or not date:
+            return
 
-        save_expense()
+        try:
+            amount = float(amount)
+        except ValueError:
+            return
+
+        update_expense(
+            expense_id,
+            category,
+            date,
+            amount
+        )
 
         popup.destroy()
 
-        status_var.set("Status : Expense updated successfully")
+        status_var.set(
+            "Status : Expense updated successfully"
+        )
 
         refresh_gui()
 
@@ -445,138 +564,244 @@ def edit_expense(index):
         command=save_changes
     ).pack(pady=15)
 
-
 # ===== View Expense History (Popup) =====
 def view_history():
 
     popup = tk.Toplevel(root)
     popup.title("Expense History")
-    popup.geometry("700x500")
+    popup.geometry("900x550")
     popup.resizable(True, True)
 
     # Center the popup
     popup.update_idletasks()
-    x = root.winfo_x() + (root.winfo_width() // 2) - (700 // 2)
-    y = root.winfo_y() + (root.winfo_height() // 2) - (500 // 2)
+
+    x = root.winfo_x() + (root.winfo_width() // 2) - (900 // 2)
+    y = root.winfo_y() + (root.winfo_height() // 2) - (550 // 2)
+
     popup.geometry(f"+{x}+{y}")
+
+    # ================= TITLE =================
 
     tk.Label(
         popup,
         text="EXPENSE HISTORY",
-        font=("Arial", 16, "bold")
-    ).pack(pady=10)
+        font=("Arial", 18, "bold")
+    ).pack(pady=15)
 
-    # Headings
-    h_frame = tk.Frame(popup)
-    h_frame.pack(fill=tk.X, padx=20)
+    # ================= TABLE FRAME =================
 
-    for head in ["Category", "Amount", "Date", "Status"]:
-
-        tk.Label(
-            h_frame,
-            text=head,
-            font=("Arial", 11, "bold"),
-            width=15,
-            anchor="w"
-        ).pack(side=tk.LEFT, padx=5)
-
-    ttk.Separator(
-        popup,
-        orient="horizontal"
-    ).pack(fill=tk.X, padx=20, pady=5)
-
-    # Scrollable List
-    h_canvas = tk.Canvas(popup, highlightthickness=0)
-
-    h_scrollbar = ttk.Scrollbar(
-        popup,
-        orient="vertical",
-        command=h_canvas.yview
+    table_frame = tk.Frame(popup)
+    table_frame.pack(
+        fill=tk.BOTH,
+        expand=True,
+        padx=25,
+        pady=10
     )
 
-    h_frame_inner = tk.Frame(h_canvas)
+    # ================= HEADINGS =================
 
-    h_frame_inner.bind(
+    headings = [
+        ("ID", 8),
+        ("Category", 30),
+        ("Amount", 18),
+        ("Date", 18)
+    ]
+
+    heading_frame = tk.Frame(table_frame)
+    heading_frame.pack(fill=tk.X)
+
+    for head, width in headings:
+
+        tk.Label(
+            heading_frame,
+            text=head,
+            font=("Arial", 11, "bold"),
+            width=width,
+            anchor="w"
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+    ttk.Separator(
+        table_frame,
+        orient="horizontal"
+    ).pack(
+        fill=tk.X,
+        pady=5
+    )
+
+    # ================= SCROLLABLE AREA =================
+
+    content_frame = tk.Frame(table_frame)
+    content_frame.pack(
+        fill=tk.BOTH,
+        expand=True
+    )
+
+    canvas = tk.Canvas(
+        content_frame,
+        highlightthickness=0
+    )
+
+    scrollbar = ttk.Scrollbar(
+        content_frame,
+        orient="vertical",
+        command=canvas.yview
+    )
+
+    history_frame = tk.Frame(canvas)
+
+    canvas_window = canvas.create_window(
+        (0, 0),
+        window=history_frame,
+        anchor="nw"
+    )
+
+    history_frame.bind(
         "<Configure>",
-        lambda e: h_canvas.configure(
-            scrollregion=h_canvas.bbox("all")
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
         )
     )
 
-    h_canvas.create_window(
-        (0, 0),
-        window=h_frame_inner,
-        anchor="nw"
+    canvas.configure(
+        yscrollcommand=scrollbar.set
     )
-    h_canvas.configure(yscrollcommand=h_scrollbar.set)
 
-    h_canvas.pack(
+    canvas.pack(
         side=tk.LEFT,
         fill=tk.BOTH,
-        expand=True,
-        padx=(20, 0)
-    )
-    h_scrollbar.pack(
-        side=tk.RIGHT,
-        fill=tk.Y,
-        padx=(0, 20)
+        expand=True
     )
 
-    # Mouse wheel for history popup
+    scrollbar.pack(
+        side=tk.RIGHT,
+        fill=tk.Y
+    )
+
+    # Make inner frame same width as canvas
+    def resize_history(event):
+
+        canvas.itemconfig(
+            canvas_window,
+            width=event.width
+        )
+
+    canvas.bind(
+        "<Configure>",
+        resize_history
+    )
+
+    # ================= LOAD DATABASE DATA =================
+
+    data = get_expenses()
+
+    for row_number, item in enumerate(data):
+
+        # PostgreSQL structure:
+        #
+        # item[0] = ID
+        # item[1] = title/category
+        # item[2] = date
+        # item[3] = amount
+
+        expense_id = item[0]
+        category = item[1]
+        date = item[2]
+        amount = item[3]
+
+        # Alternating row background
+        if row_number % 2 == 0:
+            bg = "white"
+        else:
+            bg = "#f5f5f5"
+
+        row = tk.Frame(
+            history_frame,
+            bg=bg
+        )
+
+        row.pack(
+            fill=tk.X,
+            pady=1
+        )
+
+        # ID
+        tk.Label(
+            row,
+            text=expense_id,
+            width=8,
+            anchor="w",
+            font=("Arial", 10),
+            bg=bg
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        # Category
+        tk.Label(
+            row,
+            text=category,
+            width=30,
+            anchor="w",
+            font=("Arial", 10),
+            bg=bg
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        # Amount
+        tk.Label(
+            row,
+            text=f"₹{amount:.2f}",
+            width=18,
+            anchor="w",
+            font=("Arial", 10),
+            bg=bg
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        # Date
+        tk.Label(
+            row,
+            text=str(date),
+            width=18,
+            anchor="w",
+            font=("Arial", 10),
+            bg=bg
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+    # ================= MOUSE WHEEL =================
+
     def h_mousewheel(event):
-        h_canvas.yview_scroll(
+
+        canvas.yview_scroll(
             int(-1 * (event.delta / 120)),
             "units"
         )
 
-    h_canvas.bind("<Enter>", lambda e: h_canvas.bind_all("<MouseWheel>", h_mousewheel))
-    h_canvas.bind("<Leave>", lambda e: h_canvas.unbind_all("<MouseWheel>"))
+    canvas.bind(
+        "<Enter>",
+        lambda e: canvas.bind_all(
+            "<MouseWheel>",
+            h_mousewheel
+        )
+    )
 
-    status_colors = {
-        "ACTIVE": "#27ae60",
-        "UPDATED": "#e67e22",
-        "DELETED": "#e74c3c"
-    }
-
-    for item in get_expenses():
-
-        row = tk.Frame(h_frame_inner)
-        row.pack(fill=tk.X, pady=2)
-
-        tk.Label(
-            row,
-            text=item[0],
-            width=15,
-            anchor="w",
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT, padx=5)
-
-        tk.Label(
-            row,
-            text=f"₹{item[1]}",
-            width=15,
-            anchor="w",
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT, padx=5)
-
-        tk.Label(
-            row,
-            text=item[2],
-            width=15,
-            anchor="w",
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT, padx=5)
-
-        color = status_colors.get(item[3], "black")
-
-        tk.Label(
-            row,
-            text=item[3],
-            width=15,
-            anchor="w",
-            font=("Arial", 10, "bold"),
-            fg=color
-        ).pack(side=tk.LEFT, padx=5)
+    canvas.bind(
+        "<Leave>",
+        lambda e: canvas.unbind_all(
+            "<MouseWheel>"
+        )
+    )
 
 
 # History Button
@@ -585,6 +810,7 @@ history_btn = ttk.Button(
     text="VIEW EXPENSE HISTORY",
     command=view_history
 )
+
 history_btn.pack()
 
 
