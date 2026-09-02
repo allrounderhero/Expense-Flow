@@ -1,39 +1,28 @@
 import os
 
-from helper import expenses
+FILE_PATH = "expense_details"
 
 
-def save_expense():
-
-    fp = open("expense_details", "w")
-
-    for item in expenses:
-        line = item[0] + "#" + item[1] + "#" + item[2] + "#" + item[3] + "\n"
-        fp.write(line)
-
-    fp.close()
+def save_expense(expenses):
+    with open(FILE_PATH, "w") as fp:
+        for item in expenses:
+            line = item[0] + "#" + item[1] + "#" + item[2] + "\n"
+            fp.write(line)
 
 
 def load_expense():
+    if not os.path.exists(FILE_PATH):
+        open(FILE_PATH, "w").close()
+        return []
 
-    if not os.path.exists("expense_details"):
-        fp = open("expense_details", "w")
-        fp.close()
-        return
+    expenses = []
 
-    expenses.clear()
+    with open(FILE_PATH, "r") as fp:
+        for line in fp:
+            if not line.strip():
+                continue
+            data = line.strip().split("#")
+            if len(data) == 3:
+                expenses.append((data[0], data[1], data[2]))
 
-    fp = open("expense_details", "r")
-
-    for line in fp:
-
-        if not line.strip():
-            continue
-
-        data = line.strip().split("#")
-
-        expenses.append(
-            (data[0], data[1], data[2], data[3])
-        )
-
-    fp.close()
+    return expenses

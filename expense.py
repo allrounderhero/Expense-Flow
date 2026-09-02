@@ -12,33 +12,63 @@ root = tk.Tk()
 root.title("Expense Tracker")
 root.geometry("1000x700")
 root.minsize(900, 650)
-root.configure(bg="#f0f0f0")
+
+# Color / font theme
+BG_COLOR = "#f7f9fc"
+CARD_BG = "#ffffff"
+ACCENT = "#0a74da"
+FONT_FAMILY = "Segoe UI"
+FONT_LARGE = (FONT_FAMILY, 20, "bold")
+FONT_HEADER = (FONT_FAMILY, 16, "bold")
+FONT_MEDIUM = (FONT_FAMILY, 12)
+FONT_HEADING_BOLD = (FONT_FAMILY, 12, "bold")
+FONT_HISTORY_TITLE = (FONT_FAMILY, 18, "bold")
+FONT_SMALL = (FONT_FAMILY, 10)
+FONT_TINY = (FONT_FAMILY, 9)
+
+root.configure(bg=BG_COLOR)
+
+# ttk styling
+style = ttk.Style()
+try:
+    style.theme_use("clam")
+except Exception:
+    pass
+
+style.configure("TButton", font=FONT_SMALL, padding=6)
+style.configure("TLabel", background=BG_COLOR, font=FONT_MEDIUM)
+style.configure("Card.TLabelframe", background=BG_COLOR, borderwidth=0)
+style.configure("Card.TLabelframe.Label", font=FONT_SMALL)
+style.configure("Accent.TButton", foreground="white", background=ACCENT)
+style.map("Accent.TButton",
+            background=[('active', '#095bb5')])
 
 
 # ===== Header Frame =====
-header_frame = tk.Frame(root, bg="#2c3e50", height=60)
+header_frame = tk.Frame(root, bg=ACCENT, height=60)
 header_frame.pack(fill=tk.X)
 header_frame.pack_propagate(False)
 
 tk.Label(
     header_frame,
     text="EXPENSE TRACKER",
-    font=("Arial", 20, "bold"),
-    bg="#2c3e50",
+    font=FONT_LARGE,
+    bg=ACCENT,
     fg="white"
 ).pack(expand=True)
 
 
 # ===== Middle Frame (Quick Add + Summary) =====
-middle_frame = tk.Frame(root, bg="#f0f0f0")
-middle_frame.pack(fill=tk.X, padx=20, pady=10)
+middle_frame = tk.Frame(root, bg=BG_COLOR)
+middle_frame.pack(fill=tk.X, padx=24, pady=14)
 
 
 # --- Quick Add Expense ---
 quick_add_frame = ttk.LabelFrame(
     middle_frame,
     text="  QUICK ADD EXPENSE  ",
-    padding=15
+    padding=16,
+    style="Card.TLabelframe"
 )
 quick_add_frame.pack(
     side=tk.LEFT,
@@ -50,28 +80,28 @@ quick_add_frame.pack(
 ttk.Label(
     quick_add_frame,
     text="Category :",
-    font=("Arial", 10)
+    font=FONT_SMALL
 ).grid(row=0, column=0, sticky="w", pady=8)
 
-category_entry = ttk.Entry(quick_add_frame, width=25)
+category_entry = ttk.Entry(quick_add_frame, width=28)
 category_entry.grid(row=0, column=1, pady=8, padx=(10, 0))
 
 ttk.Label(
     quick_add_frame,
     text="Amount :",
-    font=("Arial", 10)
+    font=FONT_SMALL
 ).grid(row=1, column=0, sticky="w", pady=8)
 
-amount_entry = ttk.Entry(quick_add_frame, width=25)
+amount_entry = ttk.Entry(quick_add_frame, width=28)
 amount_entry.grid(row=1, column=1, pady=8, padx=(10, 0))
 
 ttk.Label(
     quick_add_frame,
     text="Date :",
-    font=("Arial", 10)
+    font=FONT_SMALL
 ).grid(row=2, column=0, sticky="w", pady=8)
 
-date_entry = ttk.Entry(quick_add_frame, width=25)
+date_entry = ttk.Entry(quick_add_frame, width=28)
 date_entry.grid(row=2, column=1, pady=8, padx=(10, 0))
 
 
@@ -79,7 +109,8 @@ date_entry.grid(row=2, column=1, pady=8, padx=(10, 0))
 summary_frame = ttk.LabelFrame(
     middle_frame,
     text="  EXPENSE SUMMARY  ",
-    padding=15
+    padding=16,
+    style="Card.TLabelframe"
 )
 summary_frame.pack(
     side=tk.RIGHT,
@@ -91,21 +122,21 @@ summary_frame.pack(
 total_label = ttk.Label(
     summary_frame,
     text="Total Expense      : ₹0",
-    font=("Arial", 12)
+    font=FONT_MEDIUM
 )
 total_label.grid(row=0, column=0, sticky="w", pady=8)
 
 transaction_label = ttk.Label(
     summary_frame,
     text="Total Transactions : 0",
-    font=("Arial", 12)
+    font=FONT_MEDIUM
 )
 transaction_label.grid(row=1, column=0, sticky="w", pady=8)
 
 today_label = ttk.Label(
     summary_frame,
     text="Today's Expense    : ₹0",
-    font=("Arial", 12)
+    font=FONT_MEDIUM
 )
 today_label.grid(row=2, column=0, sticky="w", pady=8)
 
@@ -130,7 +161,7 @@ for i, head in enumerate(headings):
     tk.Label(
         heading_frame,
         text=head,
-        font=("Arial", 12, "bold"),
+        font=FONT_HEADING_BOLD,
         width=col_widths[i],
         anchor="w"
     ).pack(side=tk.LEFT, padx=5)
@@ -189,7 +220,7 @@ canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
 
 
 # ===== History Button =====
-history_btn_frame = tk.Frame(root, bg="#f0f0f0")
+history_btn_frame = tk.Frame(root, bg=BG_COLOR)
 history_btn_frame.pack(fill=tk.X, padx=20, pady=5)
 
 
@@ -202,9 +233,10 @@ status_bar = tk.Label(
     bd=1,
     relief=tk.SUNKEN,
     anchor=tk.W,
-    font=("Arial", 9),
+    font=FONT_TINY,
     padx=10,
-    pady=5
+    pady=5,
+    bg=CARD_BG
 )
 status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
@@ -260,7 +292,7 @@ def display_expenses():
         tk.Label(
             row,
             text=category,
-            font=("Arial", 10),
+            font=FONT_SMALL,
             width=20,
             anchor="w",
             bg=bg
@@ -273,7 +305,7 @@ def display_expenses():
         tk.Label(
             row,
             text=f"₹{amount:.2f}",
-            font=("Arial", 10),
+            font=FONT_SMALL,
             width=15,
             anchor="w",
             bg=bg
@@ -286,7 +318,7 @@ def display_expenses():
         tk.Label(
             row,
             text=str(date),
-            font=("Arial", 10),
+            font=FONT_SMALL,
             width=15,
             anchor="w",
             bg=bg
@@ -398,7 +430,8 @@ def add_expense_gui():
 add_btn = ttk.Button(
     quick_add_frame,
     text="ADD EXPENSE",
-    command=add_expense_gui
+    command=add_expense_gui,
+    style="Accent.TButton"
 )
 add_btn.grid(row=3, column=0, columnspan=2, pady=(15, 5))
 
@@ -444,7 +477,7 @@ def edit_expense(expense_id):
     tk.Label(
         popup,
         text="EDIT EXPENSE",
-        font=("Arial", 16, "bold")
+        font=FONT_HEADER
     ).pack(pady=15)
 
     form = tk.Frame(popup)
@@ -585,7 +618,7 @@ def view_history():
     tk.Label(
         popup,
         text="EXPENSE HISTORY",
-        font=("Arial", 18, "bold")
+        font=FONT_HISTORY_TITLE
     ).pack(pady=15)
 
     # ================= TABLE FRAME =================
@@ -615,7 +648,7 @@ def view_history():
         tk.Label(
             heading_frame,
             text=head,
-            font=("Arial", 11, "bold"),
+            font=FONT_HEADING_BOLD,
             width=width,
             anchor="w"
         ).pack(
@@ -733,7 +766,7 @@ def view_history():
             text=expense_id,
             width=8,
             anchor="w",
-            font=("Arial", 10),
+            font=FONT_SMALL,
             bg=bg
         ).pack(
             side=tk.LEFT,
@@ -746,7 +779,7 @@ def view_history():
             text=category,
             width=30,
             anchor="w",
-            font=("Arial", 10),
+            font=FONT_SMALL,
             bg=bg
         ).pack(
             side=tk.LEFT,
@@ -759,7 +792,7 @@ def view_history():
             text=f"₹{amount:.2f}",
             width=18,
             anchor="w",
-            font=("Arial", 10),
+            font=FONT_SMALL,
             bg=bg
         ).pack(
             side=tk.LEFT,
@@ -772,7 +805,7 @@ def view_history():
             text=str(date),
             width=18,
             anchor="w",
-            font=("Arial", 10),
+            font=FONT_SMALL,
             bg=bg
         ).pack(
             side=tk.LEFT,
@@ -808,7 +841,8 @@ def view_history():
 history_btn = ttk.Button(
     history_btn_frame,
     text="VIEW EXPENSE HISTORY",
-    command=view_history
+    command=view_history,
+    style="Accent.TButton"
 )
 
 history_btn.pack()
