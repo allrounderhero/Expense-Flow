@@ -78,7 +78,7 @@ def get_transaction_count():
     return count or 0
 
 
-def get_today_expense(today_strs):
+def get_today_expense(today_strs=None):
     con = connect_db()
     cur = con.cursor()
     cur.execute(
@@ -88,6 +88,18 @@ def get_today_expense(today_strs):
     cur.close()
     con.close()
     return total or 0
+
+
+def get_category_breakdown():
+    con = connect_db()
+    cur = con.cursor()
+    cur.execute(
+        "SELECT title, COALESCE(SUM(amount), 0), COUNT(*) FROM expense GROUP BY title ORDER BY SUM(amount) DESC"
+    )
+    data = cur.fetchall()
+    cur.close()
+    con.close()
+    return data
 
 
 def get_expenses():
